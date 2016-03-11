@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: kafka
-        image: wurstmeister/kafka
+        image: cloudtrackinc/kubernetes-kafka
         ports:
         - containerPort: 9092
         env:
@@ -31,3 +31,10 @@ spec:
             value: kafka-zoo-svc:2181
           - name: KAFKA_CREATE_TOPICS
             value: demo-topic:16:1
+        lifecycle:
+          postStart:
+            exec:
+              Command: ["kafka-autoextend-partitions.sh","up"]
+          preStop:
+            exec:
+              Command: ["kafka-autoextend-partitions.sh","down"]
