@@ -1,8 +1,6 @@
 group 'org.cloudtrack.kubetrack'
 version '1.0-SNAPSHOT'
 
-sourceCompatibility = 1.7
-
 repositories {
     mavenCentral()
 }
