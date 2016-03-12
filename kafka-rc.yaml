@@ -34,7 +34,7 @@ spec:
         lifecycle:
           postStart:
             exec:
-              Command: ["kafka-autoextend-partitions.sh","up"]
+              command: ["kafka-autoextend-partitions.sh","up"]
           preStop:
             exec:
-              Command: ["kafka-autoextend-partitions.sh","down"]
+              command: ["kafka-autoextend-partitions.sh","down"]
