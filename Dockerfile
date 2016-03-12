@@ -2,6 +2,7 @@ FROM wurstmeister/kafka
 
 MAINTAINER CloudTrackInc
 
+RUN java -version
 
 ADD . /tmp/build
 WORKDIR /tmp/build
