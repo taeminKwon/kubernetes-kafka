@@ -13,19 +13,19 @@ import collection._
 object AutoExpandCommand extends Logging {
   def main(args: Array[String]): Unit = {
     val opts = new AutoExpandCommandOptions(args)
+    val me = opts.options.valueOf(opts.selfBroker)
+    val (addr,port) = me.split(':') match {
+      case Array(e1,e2) =>
+        (e1,Integer.parseInt(e2))
+      case _ =>
+        ("127.0.0.1",9092)
+    }
     val zkConnect = opts.options.valueOf(opts.zkConnectOpt)
     val zkUtils = ZkUtils(zkConnect, 30000, 30000, JaasUtils.isZkSecurityEnabled)
     val newBrokers = opts.options.valueOf(opts.up_down) match{
       case "up"=>
         zkUtils.getAllBrokersInCluster()
       case "down"=>
-        val me = opts.options.valueOf(opts.selfBroker)
-        val (addr,port) = me.split(':') match {
-          case Array(e1,e2) =>
-            (e1,Integer.parseInt(e2))
-          case _ =>
-            ("127.0.0.1",-1)
-        }
         zkUtils.getAllBrokersInCluster().filter{
           b=>
             b.getBrokerEndPoint(SecurityProtocol.PLAINTEXT) match{
@@ -42,7 +42,15 @@ object AutoExpandCommand extends Logging {
       b =>
         b.id
     }
+    if (newBrokersIds.size<1){
+      println("No broker found")
+      return
+    }
     val topics = zkUtils.getAllTopics()
+    if (topics.size<1){
+      println("No topics found")
+      return
+    }
     val topicPartitionsToReassign = zkUtils.getReplicaAssignmentForTopics(topics)
 
     var partitionsToBeReassigned : Map[TopicAndPartition, Seq[Int]] = new mutable.HashMap[TopicAndPartition, List[Int]]()
