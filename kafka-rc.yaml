@@ -15,10 +15,12 @@ spec:
     spec:
       containers:
       - name: kafka
-        image: cloudtrackinc/kubernetes-kafka
+        image: cloudtrackinc/kubernetes-kafka:latest
         ports:
         - containerPort: 9092
         env:
+          - name: KAFKA_RESERVED_BROKER_MAX_ID
+            value: "999999999"
           - name: KAFKA_AUTO_CREATE_TOPICS_ENABLE
             value: "false"
           - name: KAFKA_PORT
