@@ -102,6 +102,7 @@ object AutoExpandCommand extends Logging {
     } else{
       error("Invalid reassignment data. Emty partitions found!!!")
     }
+    println("Rebalancing DONE!!!")
 
   }
   private def checkIfReassignmentSucceeded(zkUtils: ZkUtils, partitionsToBeReassigned: Map[TopicAndPartition, Seq[Int]])

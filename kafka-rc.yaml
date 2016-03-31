@@ -39,10 +39,3 @@ spec:
             value: kafka-zoo-svc:2181
           - name: KAFKA_CREATE_TOPICS
             value: demo-topic:16:1
-        lifecycle:
-          postStart:
-            exec:
-              command: ["kafka-autoextend-partitions.sh","up"]
-          preStop:
-            exec:
-              command: ["kafka-autoextend-partitions.sh","down"]
