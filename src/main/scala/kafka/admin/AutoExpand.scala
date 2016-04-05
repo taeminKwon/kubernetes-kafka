@@ -10,7 +10,7 @@ import collection._
 
 
 
-object AutoExpandCommand extends Logging {
+object AutoExpandCommand{
   def main(args: Array[String]): Unit = {
     val opts = new AutoExpandCommandOptions(args)
     val me = opts.options.valueOf(opts.selfBroker)
