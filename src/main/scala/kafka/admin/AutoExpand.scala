@@ -100,7 +100,7 @@ object AutoExpandCommand{
         println("Reassignment compleated!!!")
       }
     } else{
-      error("Invalid reassignment data. Emty partitions found!!!")
+      println("Invalid reassignment data. Emty partitions found!!!")
     }
     println("Rebalancing DONE!!!")
 
