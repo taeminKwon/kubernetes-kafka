@@ -17,7 +17,7 @@ fi
 
 if [[ -n "$ENABLE_AUTO_EXTEND" ]]; then
 	echo "Enable auto exand"
-	/usr/bin/kafka-autoextend-partitions.sh up &
+	/usr/bin/kafka-autoextend-partitions.sh &
 	/usr/bin/start-kafka.sh
 else
 	/usr/bin/start-kafka.sh
