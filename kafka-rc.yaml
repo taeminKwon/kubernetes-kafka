@@ -19,6 +19,8 @@ spec:
         ports:
         - containerPort: 9092
         env:
+          - name: ENABLE_AUTO_EXTEND
+            value: "true"
           - name: KAFKA_RESERVED_BROKER_MAX_ID
             value: "999999999"
           - name: KAFKA_AUTO_CREATE_TOPICS_ENABLE
@@ -28,10 +30,6 @@ spec:
           - name: KAFKA_ADVERTISED_PORT
             value: "9092"
           - name: KAFKA_ADVERTISED_HOST_NAME
-            valueFrom:
-              fieldRef:
-                fieldPath: status.podIP
-          - name: BROKER_ID_PROTOTYPE
             valueFrom:
               fieldRef:
                 fieldPath: status.podIP
