@@ -1,4 +1,4 @@
-FROM wurstmeister/kafka:0.9.0.1
+FROM wurstmeister/kafka:0.10.0.0
 
 MAINTAINER CloudTrackInc
 
