@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 
-if ! [[  $KAFKA_ADVERTISED_HOST_NAME =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+if [[ -z "${KAFKA_ADVERTISED_HOST_NAME// }" ]] ; then
 	echo "KAFKA_ADVERTISED_HOST_NAME NOT DEFINED OR INVALID '$KAFKA_ADVERTISED_HOST_NAME' !!!"
 	exit 1
 fi
+
 
 if [[ -z "$KAFKA_BROKER_ID" ]]; then
 	if [[ -z "$KUBERNETS_UID" ]]; then
