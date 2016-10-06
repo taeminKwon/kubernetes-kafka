@@ -4,7 +4,7 @@ import java.util.concurrent.{CountDownLatch, LinkedBlockingDeque, TimeUnit}
 
 import joptsimple.OptionParser
 import kafka.cluster.BrokerEndPoint
-import kafka.common.TopicAndPartition
+import kafka.common.{TopicAndPartition, AdminCommandFailedException}
 import kafka.utils._
 import org.apache.kafka.common.protocol.SecurityProtocol
 import org.apache.kafka.common.security.JaasUtils
@@ -142,11 +142,36 @@ object AutoExpandCommand {
     }
   }
 
+  /*
+   * Slightly altered version of:
+   *   https://github.com/apache/kafka/blob/0.10.0/core/src/main/scala/kafka/admin/ReassignPartitionsCommand.scala#L100
+   * Changes:
+   * - topicsToReassign is a sequence of strings instead of a json string
+   */
+  def generateAssignment(zkUtils: ZkUtils, brokerListToReassign: Seq[Int], topicsToReassign: Seq[String], disableRackAware: Boolean): (Map[TopicAndPartition, Seq[Int]], Map[TopicAndPartition, Seq[Int]]) = {
+    val duplicateTopicsToReassign = CoreUtils.duplicates(topicsToReassign)
+    if (duplicateTopicsToReassign.nonEmpty)
+      throw new AdminCommandFailedException("List of topics to reassign contains duplicate entries: %s".format(duplicateTopicsToReassign.mkString(",")))
+    val currentAssignment = zkUtils.getReplicaAssignmentForTopics(topicsToReassign)
+
+    val groupedByTopic = currentAssignment.groupBy { case (tp, _) => tp.topic }
+    val rackAwareMode = if (disableRackAware) RackAwareMode.Disabled else RackAwareMode.Enforced
+    val brokerMetadatas = AdminUtils.getBrokerMetadatas(zkUtils, rackAwareMode, Some(brokerListToReassign))
+
+    val partitionsToBeReassigned = mutable.Map[TopicAndPartition, Seq[Int]]()
+    groupedByTopic.foreach { case (topic, assignment) =>
+      val (_, replicas) = assignment.head
+      val assignedReplicas = AdminUtils.assignReplicasToBrokers(brokerMetadatas, assignment.size, replicas.size)
+      partitionsToBeReassigned ++= assignedReplicas.map { case (partition, replicas) =>
+        TopicAndPartition(topic, partition) -> replicas
+      }
+    }
+    (partitionsToBeReassigned, currentAssignment)
+  }
+
   def expand(zkUtils: ZkUtils): Unit = {
-    val newBrokers = zkUtils.getAllBrokersInCluster()
-    val newBrokersIds = newBrokers.map{
-      b =>
-        b.id
+    val newBrokersIds = zkUtils.getAllBrokersInCluster().map{
+      b => b.id
     }
     if (newBrokersIds.size<1){
       println("No broker found")
@@ -157,22 +182,11 @@ object AutoExpandCommand {
       println("No topics found")
       return
     }
-    val topicPartitionsToReassign = zkUtils.getReplicaAssignmentForTopics(topics)
 
-    var partitionsToBeReassigned : Map[TopicAndPartition, Seq[Int]] = new mutable.HashMap[TopicAndPartition, List[Int]]()
-
-    val groupedByTopic = topicPartitionsToReassign.groupBy(tp => tp._1.topic)
-    groupedByTopic.foreach { topicInfo =>
-      val assignedReplicas = AdminUtils.assignReplicasToBrokers(newBrokersIds, topicInfo._2.size,
-        topicInfo._2.head._2.size)
-      partitionsToBeReassigned ++= assignedReplicas.map(replicaInfo => (TopicAndPartition(topicInfo._1, replicaInfo._1) -> replicaInfo._2))
-    }
-    val currentPartitionReplicaAssignment = zkUtils.getReplicaAssignmentForTopics(partitionsToBeReassigned.map(_._1.topic).toSeq)
-    println("Current partition replica assignment\n\n%s"
-      .format(zkUtils.getPartitionReassignmentZkData(currentPartitionReplicaAssignment)))
-    println("Proposed partition reassignment configuration\n\n%s".format(zkUtils.getPartitionReassignmentZkData(partitionsToBeReassigned)))
-    val exec = new ReassignPartitionsCommand(zkUtils,partitionsToBeReassigned)
-   // exec.reassignPartitions()
+    var (partitionsToBeReassigned, currentAssignments) = generateAssignment(zkUtils, newBrokersIds, topics, true)
+    println("Current partition replica assignment\n\n%s".format(zkUtils.formatAsReassignmentJson(currentAssignments)))
+    println("Proposed partition reassignment configuration\n\n%s".format(zkUtils.formatAsReassignmentJson(partitionsToBeReassigned)))
+    val exec = new ReassignPartitionsCommand(zkUtils, partitionsToBeReassigned)
     if (exec.reassignPartitions()){
       var inProgress = true
       val start = System.currentTimeMillis()
@@ -201,7 +215,7 @@ object AutoExpandCommand {
         attemt+=1
       }
       if (inProgress){
-        println("Timeout reassignment partitions:\n\n%s".format(zkUtils.getPartitionReassignmentZkData(partitionsToBeReassigned)))
+        println("Timeout reassignment partitions:\n\n%s".format(zkUtils.formatAsReassignmentJson(currentAssignments)))
       } else{
         println("Reassignment compleated!!!")
       }
