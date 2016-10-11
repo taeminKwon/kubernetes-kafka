@@ -6,6 +6,16 @@ Apache Kafka to Kubernetes Replication Controller
 
 Example of deploy cluster to kubernetes.
 
+## Verification environment
+
+* Ubuntu 16.04.1 LTS (Xenial Xerus)
+* Docker version 1.12.1, build 23cf638
+* VirtualBox 5.0.20 r106931
+* Vagrant 1.8.4
+* coreos-kubernetes vagrant info
+  - https://github.com/coreos/coreos-kubernetes
+  - https://github.com/coreos/coreos-kubernetes/tree/master/multi-node/vagrant
+
 ## Features
 * Support scaling
 * Auto rebalancing on expanding cluster
